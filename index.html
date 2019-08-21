@@ -1,436 +1,435 @@
-获取栏目的子栏目
-{pc:content action="category" catid="$parentid" num="25" siteid="$siteid" order="listorder ASC"}      
-  {loop $data $v}
-     {$v[catname]}
-  {/loop}
-{/pc}
-
-栏目列表调用
-{pc:content action="lists" catid="10" num="3" order="listorder ASC limit 0,3--" moreinfo="1"}
-  {loop $data $v}
-     {$v[title]}
-     {date('Y-m-d',$v[inputtime])} 
-   {/loop}
-{/pc}
-
-单网页调用
-{pc:get sql="select * from v9_page where catid=43"}
-  {loop $data $v}
-    {$v[title]}
-  {/loop}
-{/pc}
-
-1、调用栏目图片：   
-当前栏目id：{$catid}
-当前栏目名：{$CATEGORYS[$catid][catname]}
-当前栏目目录名：{$CATEGORYS[$catid][catdir]}   
-当前栏目url：{$CATEGORYS[$catid][url]}
-当前栏目描述：{$CATEGORYS[$catid][description]}
-当前栏目图片：{$CATEGORYS[$catid][image]}    
-当前栏目的内容数：{$CATEGORYS[$catid][items]}         
-当前栏目的点击数：{$CATEGORYS[$catid][hits]}         
-当前栏目的上级栏目id：{$CATEGORYS[$catid][parentid]}
-
-2、父级栏目
-父级栏目id：$CAT[parentid];
-父级栏目的所有子栏目id：$CATEGORYS[$CAT[catid]][arrchildid];
-其他字段：只需要改动XXX：{$CATEGORYS[$top_parentid][XXX]}
-
-3. 父栏目名称、url链接、id等的调用代码标签：
-父栏目名称：{$CATEGORYS[$CAT[parentid]][catname]}
-父栏目url：{$CATEGORYS[$CAT[parentid]][url]}
-父栏目id：{$CATEGORYS[$CAT[parentid]][catid]}
-其他字段只需要改动xxx：{$CATEGORYS[$CAT[parentid]][xxx]}
-
-4.获取一级栏目
-获取一级栏目catid: {$top_parentid}
-获取一级栏目名称：{$CATEGORYS[$top_parentid][catname]}
-获取一级栏目url：{$CATEGORYS[$top_parentid][url]}
-
-5. 顶级栏目名称、url链接、id等的调用代码标签：
-顶级栏目名称：{$CATEGORYS[$top_parentid][catname]}
-顶级栏目url：{$CATEGORYS[$top_parentid][url]}
-顶级栏目id：{$CATEGORYS[$top_parentid][catid]}
-其他字段只需要改动xxx：{$CATEGORYS[$top_parentid][xxx]}
-
-我们来看一下这个函数,在PHPCMS中是这样进行定义的:
-function str_cut($string, $length, $dot = '...')
-调用：{str_cut($data, 50)}
-str_cut与strip_tags搭配使用来去除HTML，实例代码如下:
-{str_cut(strip_tags($v[description]),200)}
-
-获取文章来源： {$copyfrom}
-获取文章作者： {$username} 
-获取文章发表时间：  {str_cut($inputtime,16,'')}
-文章上一篇 下一篇
-解析：
-{$previous_page[url]} 上一篇文章链接
-{$previous_page[title]} 上一篇文章标题
-{$next_page[url]} 下一篇文章链接
-{$next_page[title]} 下一篇文章标题
-文章浏览量
-方法一：
-<script type="text/javascript" src="{JS_PATH}jquery.min.js"></script>
-<script language="JavaScript" src="{APP_PATH}api.php?op=count&id={$id}&modelid={$modelid}"></script>
-浏览量：<span id="hits"></span>
-方法二： 推荐☆☆☆☆☆
-<script type="text/javascript" src="{JS_PATH}jquery.min.js"></script>
-<span>浏览量：<span id="hits"><script language="JavaScript" src="{APP_PATH}api.php?op=count&id={$id}&modelid={$modelid}"></script></span></span>
-
-HTML 搜索表单提交
-{$search_q}
-phpcms v9搜索页、Tag页不能调用{$CATEGORYS[$catid][catname]}的解决方法
-在调用之前加入：
- $CATEGORYS = getcache('category_content_1','commons');?>
-原理：引用缓存
-// 获取数据
-{loop $datas $i $r}
-    {if $r['thumb']}加载中...{/if}
-{$r[title]}{if $r['posids']}加载中...{/if}
-{$r[description]}
-    发布时间：{format::date($r[inputtime], 1)}
-{/loop}
-{if empty($data)}未找到结果{/if}
-{$pages}
-/*  注意  */
-前台获取搜索数据 获取到的数据前调用栏目标签会发生冲突
-例：{pc:content action="lists" catid="10" num="3" order="id DESC limit 0,3--"}
-  {loop $data $v}
-     {$v[title]}
-   {/loop}
-{/pc}
-哪么就需要修改models
-路径 /htdocs/phpcms/modules/search/index.php
-修改 init() 
-$execute_time = execute_time();  //用时
-$pages = isset($pages) ? $pages : ''; //分页
-$totalnums = isset($totalnums) ? $totalnums : 0; //总条数
-$data = isset($data) ? $data : ''; //获得结果集
- //获得结果集
-把 $data = isset($data) ? $data : '';
-改成 $datas = isset($data) ? $data : '';
-前台使用 $datas遍历数据即可
-phpcms搜索获取数据除了标题、简介、时间怎么获取其他字段
-后台模型管理 字段管理 可以设置
-
-文章排序
-打开phpcms的文件结构图，找到【phpcms\modules\content】中的content.php文件，注意：最好不要用记事本打开，使用sublime或者其他软件打开。我使用的是sublime
-代码太多了，使用快捷键【Ctrl+F】(这里是sublime软件的快捷键，其他软件不一定是这个哦)搜索【$datas = $this->db->listinfo($where,'id desc',$_GET['page']);】
-找到这行代码后：直接修改成【$datas = $this->db->listinfo($where,'listorder ASC, id desc',$_GET['page']);】，你也可以先注释原代码在后面加上一行，像我这种做法，万一代码出现问题可以修改回来。
-listinfo($where,'id desc',$_GET['page']);
-注：原代码默认是使用ID倒序来排序的，
-$datas = $this->db->listinfo($where,'listorder ASC, id desc',$_GET['page']);
-修改后优先使用列表排序升序来排的
-刷新后台界面，重新排序后，在前台查看效果
-
-视频标签
-模型管理 视频模型[修改] 字段修改
-前台调用：
-{pc:content action="lists" catid="$catid" num="6" moreinfo="1" order="listorder ASC" page="$page"}     
-   {loop $data $v}
-      {php $arr = string2array($v['video_upload']);}
-   {/loop}
-{/pc} 
-
-phpcms 分页 调用标题、关键词、摘要、内容
-{pc:content action="lists" catid="$catid" num="9" order="id DESC" page="$page"}
-  {loop $data $v}
-      {$v[title]}
-      {$v[keywords]}
-  {/loop}
-{/pc}
-<div id="pages" class="text-c">{$pages}</div>
-
-phpcms 获取文章点击量
-<script type="text/javascript" src="{JS_PATH}jquery.min.js"></script> 
-阅读：
-</span>
-  <span id="hits">
-    <script language="JavaScript" src="{APP_PATH}api.php?op=count&id={$id}&modelid={$modelid}"></script>
-</span>
-
-网站关于url长度问题报告
-1、URL越短越好方便用户记忆 url太长，用户看着也不好
-2、目录的层次尽量少 百度比较容易收录目录层次少的页面
-3、网站url长度不会影响搜索引擎搜索  URL只要不超过1000个字母，都不会影响收录的
-技术支持：
-点击访问百度原文： https://zhidao.baidu.com/question/1821089038433066548.html
-PHPCMS V9 URL去掉或修改/html路径的方法 官网原文： http://bbs.phpcms.cn/thread-233394-1-1.html
-总结：
-phpcms 网站url 完全可以实现用户自定义导航
-
-phpcms在专题模块中无法调用$CATEGORYS变量
-无法调用$CATEGORYS变量
-在头部加入如下代码：
-<?php if(!isset($CATEGORYS)) { $CATEGORYS =getcache('category_content_'.$siteid,'commons'); } ?>
-经过测试，问题解决；
-
-phpcms 添加内容 出现content_form.class.php on line 512解决方法
-根据错误提示我们可以发现是由于content_form class php文件不完整导致的，网上有好多文章说是把这个文件用本地的替换掉就可 以了，但是只
-根据错误提示我们可以发现是由于content_form.class.php文件不完整导致的，网上有好多文章说是把这个文件用本地的替换掉就可 以了，但是只要一更新缓存问题又会出现，不除根，果断废弃。
-这个问题，一般用ftp上传文件时，文件代码丢失，使得代码不完整造成的，只要找到丢失文件，再上传就好了。
-../phpcms/modules/content/fields/video/form.inc.php
-就是由于这个文件不完整从而导致的错误，它才是真正的元凶。我们只要把这个文件替换掉就好了，如果用ftp上传建议大家采用“二进制”传输模式上传。
-
-PHPCMS 根据标题搜索 自定义搜索功能
-首页搜索模版里面写入：<!-- 搜索框开始 --><form name="search" type="get"> <input type="hidden" name="m" value="search"
-首页搜索模版里面写入：
-<!-- 搜索框开始 -->
-<form name="search" type="get">    
-    <input type="hidden" name="m" value="search"/>
-    <input type="hidden" name="c" value="index"/>
-    <input type="hidden" name="a" value="init"/>
-    <input type="hidden" name="typeid" value="1"/>
-    <input type="hidden" name="siteid" value="1"/>
-    <input type="text" name="q" class="ipt" id="q" value="{$search_q}">
-    <input type="submit" class="ss_btn" value="搜 索"></div>
-</form>
-<!-- 搜索框结束 -->
-<!-- 获取数据 -->
-<ul class="mainlist">
-{pc:get sql="SELECT * FROM `v9_news` where title like '%$q%' order by id DESC " num="10" page="$page" return="data"}
-           {if $data==""}
-                    <p style="text-align:center; font-size:12px; ">没有找到和<font color="#FF0000;" style="text-decoration:underline; font-weight:bold; " >{$q}</font>相关的文章，请减短关键词或换个词组！</p>
-            {/if}
-            {loop $data $v} 
-                       <li><a href="{$v['url']}"  style="color:#ea0525;" >{$v[title]}</a></li>
-             {/loop}
-          {/pc}
-</ul>
-<!-- 分页 -->
-<div class='pagelist'>{$pages}</div>
-<!-- 可自定义分页 详情见分页样式修改 -->
-<div class='pagelist'>{$en_pages}</div>
-
-phpcms 自定义带搜索条件的分页
-后台代码public function init(){ 判断是否有搜索条件 $keyword = isset($_REQUEST[& 39;keyword& 39;]) ? $_REQUEST[& 39;k
-后台代码
-public function init()
-{
-    //判断是否有搜索条件
-    $keyword = isset($_REQUEST['keyword']) ? $_REQUEST['keyword'] : '';
-    //获取当前页
-    $nowPage = isset($_GET['page']) ? $_GET['page'] : 1;
-    $result = $this->db->en_listinfo("title like '%{$keyword}%'", 'id DESC', $nowPage, 12);
-    include template('content','list');
-}
-前台调用
-<?php 
-foreach($result as $v) {
-?>
-    <tr>
-        <td align="left"><?php echo $v['title']?></td>
-    </tr>
-<?php
-}
-?>
-<div id="pages">
-   <?php 
-        $pages = $this->db->pages;
-        echo '&nbsp;&nbsp;&nbsp;';
-        echo $pages;
-    ?>
-</div>
-
-phpcms 建中英文双语网站
-第一步 网站先安装一个phpcms框架进行开发第二部 虚拟主机为例 在 www 下建 en 把项目复制一遍到 en 下 修改配置
-第一步 网站先安装一个phpcms框架进行开发
-第二部 虚拟主机为例 在/www/下建 en/
-           把项目复制一遍到 en/下
-           修改配置文件 en/   /caches/configs [database.php、system.php] 注意表前缀改成en
-第三部 导出数据库 把表前缀都改成 en
-           再次导入到原数据库 就可以了 此时数据库有两个数据库的表
-前台访问 http://www.zhulupkowski.com/index.php     http://www.zhulupkowski.com/en/index.php
-后台访问 http://www.zhulupkowski.com/admin.php   http://www.zhulupkowski.com/en/admin.php
-
-PHPCMS V9 后台编辑器如何添加HTML/JS代码而不解析
-PHPCMS V9后台编辑器添加HTML JS代码而不解析对于大部人来说是很鸡肋的东西，但对于技术分享的博客来说确是必不可少，PHPCMS后台编辑器输
-PHPCMS V9后台编辑器添加HTML/JS代码而不解析对于大部人来说是很鸡肋的东西，但对于技术分享的博客来说确是必不可少，PHPCMS后台编辑器输入的时候是没有问题的，但是修改的时候HTML代码会被自动解析，做为一个技术员，发布文章后修改的概率太高了，所以有必要修复这问题
-解决方法：
-打开/phpcms/modules/content/content.php，把下面的内容删除掉
-$data = array_map('htmlspecialchars_decode',$data);
-
-phpcms 分页类样式修改的方法
-分页类样式修改的方法网站添加英文版，但是语言包是中文的（语言包配置修改文件是：【caches】-》【configs】-》system php文件中的{& 39;l
-分页类样式修改的方法
-网站添加英文版，但是语言包是中文的（语言包配置修改文件是：【caches】-》【configs】-》system.php文件中的{'lang' => 'zh-cn',  //网站语言包}部分）
-语言包的主要文件是【phpcms】-》【languages】-》【zh-cn】-》system.lang.php
-修改如下：
-$LANG['page_item'] = '条';
-$LANG['previous'] = '上一页';
-$LANG['next'] = '下一页';
-$LANG['en_page_item'] = ' total';
-$LANG['en_previous'] = 'previous';
-$LANG['en_next'] = 'next';
-把中文部分复制一份添加一个英文版
-修改分页函数【phpcms】-》【libs】-》【functions】-》global.func.php里的pages()函数
-复制一份修改成en_pages，如下所示
-    function en_pages($num, $curr_page, $perpage = 20, $urlrule = '', $array = array(),$setpages = 10) {
-	if(defined('URLRULE') && $urlrule == '') {
-		$urlrule = URLRULE;
-		$array = $GLOBALS['URL_ARRAY'];
-	} elseif($urlrule == '') {
-		$urlrule = url_par('page={$page}');
-	}
-	$multipage = '';
-	if($num > $perpage) {
-		$page = $setpages+1;
-		$offset = ceil($setpages/2-1);
-		$pages = ceil($num / $perpage);
-		if (defined('IN_ADMIN') && !defined('PAGES')) define('PAGES', $pages);
-		$from = $curr_page - $offset;
-		$to = $curr_page + $offset;
-		$more = 0;
-		if($page >= $pages) {
-			$from = 2;
-			$to = $pages-1;
-		} else {
-			if($from <= 1) {
-				$to = $page-1;
-				$from = 2;
-			}  elseif($to >= $pages) {
-				$from = $pages-($page-2);
-				$to = $pages-1;
-			}
-			$more = 1;
-		}
-		$multipage .= '<a href="'.pageurl($urlrule, 1, $array).'" class="bor">'.L('首页').'</a>';
-		if($curr_page>0) {
-			$multipage .= ' <a href="'.pageurl($urlrule, $curr_page-1, $array).'" class="bor">'.L('previous').'</a>';
-			if($curr_page==1) {
-				$multipage .= ' <span>1</span>';
-			} elseif($curr_page>6 && $more) {
-				$multipage .= ' <a href="'.pageurl($urlrule, 1, $array).'" class="one">1</a>..';
-			} else {
-				$multipage .= ' <a href="'.pageurl($urlrule, 1, $array).'" class="one">1</a>';
-			}
-		}
-		for($i = $from; $i <= $to; $i++) {
-			if($i != $curr_page) {
-				$multipage .= ' <a href="'.pageurl($urlrule, $i, $array).'" class="one" >'.$i.'</a>';
-			} else {
-				$multipage .= ' <span>'.$i.'</span>';
-			}
-		}
-		if($curr_page<$pages) {
-			if($curr_page<$pages-5 && $more) {
-				$multipage .= ' ..<a href="'.pageurl($urlrule, $pages, $array).'" class="one">'.$pages.'</a> <a href="'.pageurl($urlrule, $curr_page+1, $array).'" class="bor">'.L('next').'</a>';
-			} else {
-				$multipage .= ' <a href="'.pageurl($urlrule, $pages, $array).'" class="one">'.$pages.'</a> <a href="'.pageurl($urlrule, $curr_page+1, $array).'" class="bor">'.L('next').'</a>';
-			}
-		} elseif($curr_page==$pages) {
-			$multipage .= ' <span>'.$pages.'</span> <a href="'.pageurl($urlrule, $curr_page, $array).'" class="bor">'.L('next').'</a>';
-		} else {
-			$multipage .= ' <a href="'.pageurl($urlrule, $pages, $array).'" class="one">'.$pages.'</a> <a href="'.pageurl($urlrule, $curr_page+1, $array).'" class="bor">'.L('next').'</a>';
-		}
-		$multipage .= '<a href="'.pageurl($urlrule, $pages, $array).'" class="bor">'.L('末页').'</a>';
-		$multipage .= '<a class="solidbor">'.L('共').$pages.L('页').'</a>';
-		$multipage .= '<a class="solidbor">'.$num.L('page_item').'</a>';
-	}
-	return $multipage;
-}
-然后修改【phpcms】-》【libs】-》【classes】-》template_cache.class.php
-$str .= '$pages = pages($'.$op.'_total, $page, $pagesize, $urlrule);';
-在这行的下面加上
-$str .= '$en_pages = en_pages($'.$op.'_total, $page, $pagesize, $urlrule);';
-$str .= '$r = $get_db->sql_query("'.$sql.'");$s = $get_db->fetch_next();$pages=pages($s[\'count\'], $page, $pagesize, $urlrule);';
-在他下面增加：
-$str .= '$r = $get_db->sql_query("'.$sql.'");$s = $get_db->fetch_next();$en_pages=en_pages($s[\'count\'], $page, $pagesize, $urlrule);';
-最后在模板中直接用就可以了，如下
-把  ：<div id="pages" class="text-c">{$pages}</div> 
-改成：<div id="pages" class="text-c">{$en_pages}</div>
-
-phpcms 表单向导 后台预览报错
-表单向导添加的表单怎么不能预览和[访问前台]呀更新缓存就可以了
-表单向导添加的表单怎么不能预览和[访问前台]呀
-更新缓存就可以了
-
-phpcms 表单向导HTML案例
-表单向导HTML案例<form method="post" action="{APP_PATH}index php?m=formguide&c=index&a=show&formid=12&action=js&siteid=1">
-表单向导HTML案例
-<form method="post" action="{APP_PATH}index.php?m=formguide&c=index&a=show&formid=12&action=js&siteid=1">
-      <input type="hidden" name="GuestBook_CateId" id="GuestBook_CateId" value="89" />
-      <input type="hidden" name="successMessage" id="successMessage" value="感谢您的参与！" />
-      <input type="hidden" name="successUrl" id="successUrl" value="/feedback_89_89.html" />
-      <input type="hidden" name="errorMessage" id="errorMessage" value="对不起，提交失败，请重试！" />
-      <input type="hidden" name="errorCodeMessage" id="errorCodeMessage" value="对不起，您输入的验证码值不对，请重试！" />
-      
-      <li class="land_xinxi_li"> <span class="inp_tit">联系人:</span>
-        <input type="text" class="inp" placeholder="请输入您的姓名" name="info[name]" id="GuestBook_UserName"/>
-        <div class="notice"> <span id="ReqUserName">*</span> </div>
-      </li>
-      <li class="land_xinxi_li"> <span class="inp_tit">电话：</span>
-        <input type="number" class="inp" placeholder="请输入您的电话" name="info[phone]" id="GuestBook_UserTel" />
-        <div class="notice"> <span id="ReqUserTel">*</span> </div>
-      </li>
-      <li class="land_xinxi_li">
-        <input type="submit" name="dosubmit" class="btn_tj" id="dosubmit" value="提交"/>
-      </li>
-</form>
-  
-phpcms 表单向导--添加验证码
-在phpcms表单向导模块中创建字段时没有验证码类型去选择，所以也就无法直接使用来加入验证码了。对模板程序稍微进行扩展开发即可实现。具体
-在phpcms表单向导模块中创建字段时没有验证码类型去选择，所以也就无法直接使用来加入验证码了。
-对模板程序稍微进行扩展开发即可实现。具体流程如下：
-一、找到表单向导生成模板（一般默认为phpcms/templates/default/formguide/show_js.html）,在大约25行form表单中插入调用验证码的代码，如下：
-<tr>
-    <td><label for="code">验证码</label></td>
-    <td>
-    {php pc_base::load_sys_class('form', '', 0); }
-    <input type="text" id="code" name="code" size="10">
-    {form::checkcode('code_img', '4', '14', 100, 30)}
-    </td>
-</tr>
-二、然后找到表单提交地址对应的方法（phpcms/modules/formguide/index.php里的show()方法），在其中加入验证验证码是否正确的程序即可。代码示例如下：
-找到大约第51行，有一句：
-if (isset($_POST['dosubmit'])) {
-一定要在此句之后的if判断大括号中写：
-//启动session
-$session_storage = 'session_'.pc_base::load_config('system','session_storage');
-pc_base::load_sys_class($session_storage);
-//验证码
-if (($_SESSION['code'] != strtolower($_POST['code'])) || empty($_SESSION['code'])) {
-    showmessage("验证码错误");
-} else {
-    $_SESSION['code'] = '';
-}
-  
-phpcms 前台判断用户是否登录
-前台登录注册路径：{APP_PATH}}index php?m=member&c=index&a=login判断用户是否登录<?php $userid= param::get_cookie(&
-前台登录注册
-路径：{APP_PATH}}index.php?m=member&c=index&a=login
-判断用户是否登录
-<?php
-        $userid= param::get_cookie('_userid');
-?>
-<!--然后再判断是否为空-->
-{if $userid}   
-       。。。这里写已经登录之后的代码。。。
-{else}
-       。。。这里写已经登录之后的代码。。。
-{/if}
-<!--获取用户名-->
-<?php
-$_username = param::get_cookie('_username');//当前登录人用户名
-$_userid = param::get_cookie('_userid');//当然登录人id
-?>
-{$_userid}
-{$_username}
-  
-phpcms 网站上线流程
-v9两个数据库配置地方，一个是D: wamp www caches configs database php另一个是D: wamp www phpsso_server caches configs database php会
-v9两个数据库配置地方，一个是D:\wamp\www\caches\configs\database.php
-另一个是D:\wamp\www\phpsso_server\caches\configs\database.php
-会员注册gong功能
-很多人在网站搬迁的时候只修改了第一个数据库配置地方，把phpsso_server这里面的配置忘记修改了，所以会员没法注册登录，是不是很简单呀，解决搞定。
-  
-phpcms 面包屑导航 
-当前栏目位置（面包屑导航）：{catpos($catid)}样式修改：phpcms -> libs -> function -> global func php找到函数catpos() 进行修改导航栏样式
-当前栏目位置（面包屑导航）：{catpos($catid)}
-样式修改：phpcms -> libs -> function -> global.func.php
-找到函数catpos() 进行修改导航栏样式
-  
-phpcms 中调用某个栏目页面下的子栏目里面的所有文章并分页
-{pc:content action="lists" catid="$catid" num="3" order="id DESC" page="$page"} {loop $data $v} <a href="">abc</a> {/loop} {/pc}
-html页面调用： {$pages}
-  
+<div>获取栏目的子栏目</div>
+<div>{pc:content action=&quot;category&quot; catid=&quot;$parentid&quot; num=&quot;25&quot; siteid=&quot;$siteid&quot; order=&quot;listorder ASC&quot;}&nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; {loop $data $v}</div>
+<div>&nbsp; &nbsp; &nbsp;{$v[catname]}</div>
+<div>&nbsp; {/loop}</div>
+<div>{/pc}</div>
+<div>&nbsp;</div>
+<div>栏目列表调用</div>
+<div>{pc:content action=&quot;lists&quot; catid=&quot;10&quot; num=&quot;3&quot; order=&quot;listorder ASC limit 0,3--&quot; moreinfo=&quot;1&quot;}</div>
+<div>&nbsp; {loop $data $v}</div>
+<div>&nbsp; &nbsp; &nbsp;{$v[title]}</div>
+<div>&nbsp; &nbsp; &nbsp;{date(&#39;Y-m-d&#39;,$v[inputtime])}&nbsp;</div>
+<div>&nbsp; &nbsp;{/loop}</div>
+<div>{/pc}</div>
+<div>&nbsp;</div>
+<div>单网页调用</div>
+<div>{pc:get sql=&quot;select * from v9_page where catid=43&quot;}</div>
+<div>&nbsp; {loop $data $v}</div>
+<div>&nbsp; &nbsp; {$v[title]}</div>
+<div>&nbsp; {/loop}</div>
+<div>{/pc}</div>
+<div>&nbsp;</div>
+<div>1、调用栏目图片：&nbsp; &nbsp;</div>
+<div>当前栏目id：{$catid}</div>
+<div>当前栏目名：{$CATEGORYS[$catid][catname]}</div>
+<div>当前栏目目录名：{$CATEGORYS[$catid][catdir]}&nbsp; &nbsp;</div>
+<div>当前栏目url：{$CATEGORYS[$catid][url]}</div>
+<div>当前栏目描述：{$CATEGORYS[$catid][description]}</div>
+<div>当前栏目图片：{$CATEGORYS[$catid][image]}&nbsp; &nbsp;&nbsp;</div>
+<div>当前栏目的内容数：{$CATEGORYS[$catid][items]}&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>当前栏目的点击数：{$CATEGORYS[$catid][hits]}&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>当前栏目的上级栏目id：{$CATEGORYS[$catid][parentid]}</div>
+<div>&nbsp;</div>
+<div>2、父级栏目</div>
+<div>父级栏目id：$CAT[parentid];</div>
+<div>父级栏目的所有子栏目id：$CATEGORYS[$CAT[catid]][arrchildid];</div>
+<div>其他字段：只需要改动XXX：{$CATEGORYS[$top_parentid][XXX]}</div>
+<div>&nbsp;</div>
+<div>3. 父栏目名称、url链接、id等的调用代码标签：</div>
+<div>父栏目名称：{$CATEGORYS[$CAT[parentid]][catname]}</div>
+<div>父栏目url：{$CATEGORYS[$CAT[parentid]][url]}</div>
+<div>父栏目id：{$CATEGORYS[$CAT[parentid]][catid]}</div>
+<div>其他字段只需要改动xxx：{$CATEGORYS[$CAT[parentid]][xxx]}</div>
+<div>&nbsp;</div>
+<div>4.获取一级栏目</div>
+<div>获取一级栏目catid: {$top_parentid}</div>
+<div>获取一级栏目名称：{$CATEGORYS[$top_parentid][catname]}</div>
+<div>获取一级栏目url：{$CATEGORYS[$top_parentid][url]}</div>
+<div>&nbsp;</div>
+<div>5. 顶级栏目名称、url链接、id等的调用代码标签：</div>
+<div>顶级栏目名称：{$CATEGORYS[$top_parentid][catname]}</div>
+<div>顶级栏目url：{$CATEGORYS[$top_parentid][url]}</div>
+<div>顶级栏目id：{$CATEGORYS[$top_parentid][catid]}</div>
+<div>其他字段只需要改动xxx：{$CATEGORYS[$top_parentid][xxx]}</div>
+<div>&nbsp;</div>
+<div>我们来看一下这个函数,在PHPCMS中是这样进行定义的:</div>
+<div>function str_cut($string, $length, $dot = &#39;...&#39;)</div>
+<div>调用：{str_cut($data, 50)}</div>
+<div>str_cut与strip_tags搭配使用来去除HTML，实例代码如下:</div>
+<div>{str_cut(strip_tags($v[description]),200)}</div>
+<div>&nbsp;</div>
+<div>获取文章来源： {$copyfrom}</div>
+<div>获取文章作者： {$username}&nbsp;</div>
+<div>获取文章发表时间：&nbsp; {str_cut($inputtime,16,&#39;&#39;)}</div>
+<div>文章上一篇 下一篇</div>
+<div>解析：</div>
+<div>{$previous_page[url]} 上一篇文章链接</div>
+<div>{$previous_page[title]} 上一篇文章标题</div>
+<div>{$next_page[url]} 下一篇文章链接</div>
+<div>{$next_page[title]} 下一篇文章标题</div>
+<div>文章浏览量</div>
+<div>方法一：</div>
+<div>&lt;script type=&quot;text/javascript&quot; src=&quot;{JS_PATH}jquery.min.js&quot;&gt;&lt;/script&gt;</div>
+<div>&lt;script language=&quot;JavaScript&quot; src=&quot;{APP_PATH}api.php?op=count&amp;id={$id}&amp;modelid={$modelid}&quot;&gt;&lt;/script&gt;</div>
+<div>浏览量：&lt;span id=&quot;hits&quot;&gt;&lt;/span&gt;</div>
+<div>方法二： 推荐☆☆☆☆☆</div>
+<div>&lt;script type=&quot;text/javascript&quot; src=&quot;{JS_PATH}jquery.min.js&quot;&gt;&lt;/script&gt;</div>
+<div>&lt;span&gt;浏览量：&lt;span id=&quot;hits&quot;&gt;&lt;script language=&quot;JavaScript&quot; src=&quot;{APP_PATH}api.php?op=count&amp;id={$id}&amp;modelid={$modelid}&quot;&gt;&lt;/script&gt;&lt;/span&gt;&lt;/span&gt;</div>
+<div>&nbsp;</div>
+<div>HTML 搜索表单提交</div>
+<div>{$search_q}</div>
+<div>phpcms v9搜索页、Tag页不能调用{$CATEGORYS[$catid][catname]}的解决方法</div>
+<div>在调用之前加入：</div>
+<div>&nbsp;$CATEGORYS = getcache(&#39;category_content_1&#39;,&#39;commons&#39;);?&gt;</div>
+<div>原理：引用缓存</div>
+<div>// 获取数据</div>
+<div>{loop $datas $i $r}</div>
+<div>&nbsp; &nbsp; {if $r[&#39;thumb&#39;]}加载中...{/if}</div>
+<div>{$r[title]}{if $r[&#39;posids&#39;]}加载中...{/if}</div>
+<div>{$r[description]}</div>
+<div>&nbsp; &nbsp; 发布时间：{format::date($r[inputtime], 1)}</div>
+<div>{/loop}</div>
+<div>{if empty($data)}未找到结果{/if}</div>
+<div>{$pages}</div>
+<div>/*&nbsp; 注意&nbsp; */</div>
+<div>前台获取搜索数据 获取到的数据前调用栏目标签会发生冲突</div>
+<div>例：{pc:content action=&quot;lists&quot; catid=&quot;10&quot; num=&quot;3&quot; order=&quot;id DESC limit 0,3--&quot;}</div>
+<div>&nbsp; {loop $data $v}</div>
+<div>&nbsp; &nbsp; &nbsp;{$v[title]}</div>
+<div>&nbsp; &nbsp;{/loop}</div>
+<div>{/pc}</div>
+<div>哪么就需要修改models</div>
+<div>路径 /htdocs/phpcms/modules/search/index.php</div>
+<div>修改 init()&nbsp;</div>
+<div>$execute_time = execute_time();&nbsp; //用时</div>
+<div>$pages = isset($pages) ? $pages : &#39;&#39;; //分页</div>
+<div>$totalnums = isset($totalnums) ? $totalnums : 0; //总条数</div>
+<div>$data = isset($data) ? $data : &#39;&#39;; //获得结果集</div>
+<div>&nbsp;//获得结果集</div>
+<div>把 $data = isset($data) ? $data : &#39;&#39;;</div>
+<div>改成 $datas = isset($data) ? $data : &#39;&#39;;</div>
+<div>前台使用 $datas遍历数据即可</div>
+<div>phpcms搜索获取数据除了标题、简介、时间怎么获取其他字段</div>
+<div>后台模型管理 字段管理 可以设置</div>
+<div>&nbsp;</div>
+<div>文章排序</div>
+<div>打开phpcms的文件结构图，找到【phpcms\modules\content】中的content.php文件，注意：最好不要用记事本打开，使用sublime或者其他软件打开。我使用的是sublime</div>
+<div>代码太多了，使用快捷键【Ctrl+F】(这里是sublime软件的快捷键，其他软件不一定是这个哦)搜索【$datas = $this-&gt;db-&gt;listinfo($where,&#39;id desc&#39;,$_GET[&#39;page&#39;]);】</div>
+<div>找到这行代码后：直接修改成【$datas = $this-&gt;db-&gt;listinfo($where,&#39;listorder ASC, id desc&#39;,$_GET[&#39;page&#39;]);】，你也可以先注释原代码在后面加上一行，像我这种做法，万一代码出现问题可以修改回来。</div>
+<div>listinfo($where,&#39;id desc&#39;,$_GET[&#39;page&#39;]);</div>
+<div>注：原代码默认是使用ID倒序来排序的，</div>
+<div>$datas = $this-&gt;db-&gt;listinfo($where,&#39;listorder ASC, id desc&#39;,$_GET[&#39;page&#39;]);</div>
+<div>修改后优先使用列表排序升序来排的</div>
+<div>刷新后台界面，重新排序后，在前台查看效果</div>
+<div>&nbsp;</div>
+<div>视频标签</div>
+<div>模型管理 视频模型[修改] 字段修改</div>
+<div>前台调用：</div>
+<div>{pc:content action=&quot;lists&quot; catid=&quot;$catid&quot; num=&quot;6&quot; moreinfo=&quot;1&quot; order=&quot;listorder ASC&quot; page=&quot;$page&quot;}&nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp;{loop $data $v}</div>
+<div>&nbsp; &nbsp; &nbsp; {php $arr = string2array($v[&#39;video_upload&#39;]);}</div>
+<div>&nbsp; &nbsp;{/loop}</div>
+<div>{/pc}&nbsp;</div>
+<div>&nbsp;</div>
+<div>phpcms 分页 调用标题、关键词、摘要、内容</div>
+<div>{pc:content action=&quot;lists&quot; catid=&quot;$catid&quot; num=&quot;9&quot; order=&quot;id DESC&quot; page=&quot;$page&quot;}</div>
+<div>&nbsp; {loop $data $v}</div>
+<div>&nbsp; &nbsp; &nbsp; {$v[title]}</div>
+<div>&nbsp; &nbsp; &nbsp; {$v[keywords]}</div>
+<div>&nbsp; {/loop}</div>
+<div>{/pc}</div>
+<div>&lt;div id=&quot;pages&quot; class=&quot;text-c&quot;&gt;{$pages}&lt;/div&gt;</div>
+<div>&nbsp;</div>
+<div>phpcms 获取文章点击量</div>
+<div>&lt;script type=&quot;text/javascript&quot; src=&quot;{JS_PATH}jquery.min.js&quot;&gt;&lt;/script&gt;&nbsp;</div>
+<div>阅读：</div>
+<div>&lt;/span&gt;</div>
+<div>&nbsp; &lt;span id=&quot;hits&quot;&gt;</div>
+<div>&nbsp; &nbsp; &lt;script language=&quot;JavaScript&quot; src=&quot;{APP_PATH}api.php?op=count&amp;id={$id}&amp;modelid={$modelid}&quot;&gt;&lt;/script&gt;</div>
+<div>&lt;/span&gt;</div>
+<div>&nbsp;</div>
+<div>网站关于url长度问题报告</div>
+<div>1、URL越短越好方便用户记忆 url太长，用户看着也不好</div>
+<div>2、目录的层次尽量少 百度比较容易收录目录层次少的页面</div>
+<div>3、网站url长度不会影响搜索引擎搜索&nbsp; URL只要不超过1000个字母，都不会影响收录的</div>
+<div>技术支持：</div>
+<div>点击访问百度原文： https://zhidao.baidu.com/question/1821089038433066548.html</div>
+<div>PHPCMS V9 URL去掉或修改/html路径的方法 官网原文： http://bbs.phpcms.cn/thread-233394-1-1.html</div>
+<div>总结：</div>
+<div>phpcms 网站url 完全可以实现用户自定义导航</div>
+<div>&nbsp;</div>
+<div>phpcms在专题模块中无法调用$CATEGORYS变量</div>
+<div>无法调用$CATEGORYS变量</div>
+<div>在头部加入如下代码：</div>
+<div>&lt;?php if(!isset($CATEGORYS)) { $CATEGORYS =getcache(&#39;category_content_&#39;.$siteid,&#39;commons&#39;); } ?&gt;</div>
+<div>经过测试，问题解决；</div>
+<div>&nbsp;</div>
+<div>phpcms 添加内容 出现content_form.class.php on line 512解决方法</div>
+<div>根据错误提示我们可以发现是由于content_form class php文件不完整导致的，网上有好多文章说是把这个文件用本地的替换掉就可 以了，但是只</div>
+<div>根据错误提示我们可以发现是由于content_form.class.php文件不完整导致的，网上有好多文章说是把这个文件用本地的替换掉就可 以了，但是只要一更新缓存问题又会出现，不除根，果断废弃。</div>
+<div>这个问题，一般用ftp上传文件时，文件代码丢失，使得代码不完整造成的，只要找到丢失文件，再上传就好了。</div>
+<div>../phpcms/modules/content/fields/video/form.inc.php</div>
+<div>就是由于这个文件不完整从而导致的错误，它才是真正的元凶。我们只要把这个文件替换掉就好了，如果用ftp上传建议大家采用&ldquo;二进制&rdquo;传输模式上传。</div>
+<div>&nbsp;</div>
+<div>PHPCMS 根据标题搜索 自定义搜索功能</div>
+<div>首页搜索模版里面写入：&lt;!-- 搜索框开始 --&gt;&lt;form name=&quot;search&quot; type=&quot;get&quot;&gt; &lt;input type=&quot;hidden&quot; name=&quot;m&quot; value=&quot;search&quot;</div>
+<div>首页搜索模版里面写入：</div>
+<div>&lt;!-- 搜索框开始 --&gt;</div>
+<div>&lt;form name=&quot;search&quot; type=&quot;get&quot;&gt;&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;m&quot; value=&quot;search&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;c&quot; value=&quot;index&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;a&quot; value=&quot;init&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;typeid&quot; value=&quot;1&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;siteid&quot; value=&quot;1&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;text&quot; name=&quot;q&quot; class=&quot;ipt&quot; id=&quot;q&quot; value=&quot;{$search_q}&quot;&gt;</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;submit&quot; class=&quot;ss_btn&quot; value=&quot;搜 索&quot;&gt;&lt;/div&gt;</div>
+<div>&lt;/form&gt;</div>
+<div>&lt;!-- 搜索框结束 --&gt;</div>
+<div>&lt;!-- 获取数据 --&gt;</div>
+<div>&lt;ul class=&quot;mainlist&quot;&gt;</div>
+<div>{pc:get sql=&quot;SELECT * FROM `v9_news` where title like &#39;%$q%&#39; order by id DESC &quot; num=&quot;10&quot; page=&quot;$page&quot; return=&quot;data&quot;}</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;{if $data==&quot;&quot;}</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &lt;p style=&quot;text-align:center; font-size:12px; &quot;&gt;没有找到和&lt;font color=&quot;#FF0000;&quot; style=&quot;text-decoration:underline; font-weight:bold; &quot; &gt;{$q}&lt;/font&gt;相关的文章，请减短关键词或换个词组！&lt;/p&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; {/if}</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; {loop $data $v}&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&lt;li&gt;&lt;a href=&quot;{$v[&#39;url&#39;]}&quot;&nbsp; style=&quot;color:#ea0525;&quot; &gt;{$v[title]}&lt;/a&gt;&lt;/li&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;{/loop}</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; {/pc}</div>
+<div>&lt;/ul&gt;</div>
+<div>&lt;!-- 分页 --&gt;</div>
+<div>&lt;div class=&#39;pagelist&#39;&gt;{$pages}&lt;/div&gt;</div>
+<div>&lt;!-- 可自定义分页 详情见分页样式修改 --&gt;</div>
+<div>&lt;div class=&#39;pagelist&#39;&gt;{$en_pages}&lt;/div&gt;</div>
+<div>&nbsp;</div>
+<div>phpcms 自定义带搜索条件的分页</div>
+<div>后台代码public function init(){ 判断是否有搜索条件 $keyword = isset($_REQUEST[&amp; 39;keyword&amp; 39;]) ? $_REQUEST[&amp; 39;k</div>
+<div>后台代码</div>
+<div>public function init()</div>
+<div>{</div>
+<div>&nbsp; &nbsp; //判断是否有搜索条件</div>
+<div>&nbsp; &nbsp; $keyword = isset($_REQUEST[&#39;keyword&#39;]) ? $_REQUEST[&#39;keyword&#39;] : &#39;&#39;;</div>
+<div>&nbsp; &nbsp; //获取当前页</div>
+<div>&nbsp; &nbsp; $nowPage = isset($_GET[&#39;page&#39;]) ? $_GET[&#39;page&#39;] : 1;</div>
+<div>&nbsp; &nbsp; $result = $this-&gt;db-&gt;en_listinfo(&quot;title like &#39;%{$keyword}%&#39;&quot;, &#39;id DESC&#39;, $nowPage, 12);</div>
+<div>&nbsp; &nbsp; include template(&#39;content&#39;,&#39;list&#39;);</div>
+<div>}</div>
+<div>前台调用</div>
+<div>&lt;?php&nbsp;</div>
+<div>foreach($result as $v) {</div>
+<div>?&gt;</div>
+<div>&nbsp; &nbsp; &lt;tr&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &lt;td align=&quot;left&quot;&gt;&lt;?php echo $v[&#39;title&#39;]?&gt;&lt;/td&gt;</div>
+<div>&nbsp; &nbsp; &lt;/tr&gt;</div>
+<div>&lt;?php</div>
+<div>}</div>
+<div>?&gt;</div>
+<div>&lt;div id=&quot;pages&quot;&gt;</div>
+<div>&nbsp; &nbsp;&lt;?php&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; $pages = $this-&gt;db-&gt;pages;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; echo &#39;&amp;nbsp;&amp;nbsp;&amp;nbsp;&#39;;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; echo $pages;</div>
+<div>&nbsp; &nbsp; ?&gt;</div>
+<div>&lt;/div&gt;</div>
+<div>&nbsp;</div>
+<div>phpcms 建中英文双语网站</div>
+<div>第一步 网站先安装一个phpcms框架进行开发第二部 虚拟主机为例 在 www 下建 en 把项目复制一遍到 en 下 修改配置</div>
+<div>第一步 网站先安装一个phpcms框架进行开发</div>
+<div>第二部 虚拟主机为例 在/www/下建 en/</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;把项目复制一遍到 en/下</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;修改配置文件 en/&nbsp; &nbsp;/caches/configs [database.php、system.php] 注意表前缀改成en</div>
+<div>第三部 导出数据库 把表前缀都改成 en</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;再次导入到原数据库 就可以了 此时数据库有两个数据库的表</div>
+<div>前台访问 http://www.zhulupkowski.com/index.php&nbsp; &nbsp; &nbsp;http://www.zhulupkowski.com/en/index.php</div>
+<div>后台访问 http://www.zhulupkowski.com/admin.php&nbsp; &nbsp;http://www.zhulupkowski.com/en/admin.php</div>
+<div>&nbsp;</div>
+<div>PHPCMS V9 后台编辑器如何添加HTML/JS代码而不解析</div>
+<div>PHPCMS V9后台编辑器添加HTML JS代码而不解析对于大部人来说是很鸡肋的东西，但对于技术分享的博客来说确是必不可少，PHPCMS后台编辑器输</div>
+<div>PHPCMS V9后台编辑器添加HTML/JS代码而不解析对于大部人来说是很鸡肋的东西，但对于技术分享的博客来说确是必不可少，PHPCMS后台编辑器输入的时候是没有问题的，但是修改的时候HTML代码会被自动解析，做为一个技术员，发布文章后修改的概率太高了，所以有必要修复这问题</div>
+<div>解决方法：</div>
+<div>打开/phpcms/modules/content/content.php，把下面的内容删除掉</div>
+<div>$data = array_map(&#39;htmlspecialchars_decode&#39;,$data);</div>
+<div>&nbsp;</div>
+<div>phpcms 分页类样式修改的方法</div>
+<div>分页类样式修改的方法网站添加英文版，但是语言包是中文的（语言包配置修改文件是：【caches】-》【configs】-》system php文件中的{&amp; 39;l</div>
+<div>分页类样式修改的方法</div>
+<div>网站添加英文版，但是语言包是中文的（语言包配置修改文件是：【caches】-》【configs】-》system.php文件中的{&#39;lang&#39; =&gt; &#39;zh-cn&#39;,&nbsp; //网站语言包}部分）</div>
+<div>语言包的主要文件是【phpcms】-》【languages】-》【zh-cn】-》system.lang.php</div>
+<div>修改如下：</div>
+<div>$LANG[&#39;page_item&#39;] = &#39;条&#39;;</div>
+<div>$LANG[&#39;previous&#39;] = &#39;上一页&#39;;</div>
+<div>$LANG[&#39;next&#39;] = &#39;下一页&#39;;</div>
+<div>$LANG[&#39;en_page_item&#39;] = &#39; total&#39;;</div>
+<div>$LANG[&#39;en_previous&#39;] = &#39;previous&#39;;</div>
+<div>$LANG[&#39;en_next&#39;] = &#39;next&#39;;</div>
+<div>把中文部分复制一份添加一个英文版</div>
+<div>修改分页函数【phpcms】-》【libs】-》【functions】-》global.func.php里的pages()函数</div>
+<div>复制一份修改成en_pages，如下所示</div>
+<div>&nbsp; &nbsp; function en_pages($num, $curr_page, $perpage = 20, $urlrule = &#39;&#39;, $array = array(),$setpages = 10) {</div>
+<div>if(defined(&#39;URLRULE&#39;) &amp;&amp; $urlrule == &#39;&#39;) {</div>
+<div>$urlrule = URLRULE;</div>
+<div>$array = $GLOBALS[&#39;URL_ARRAY&#39;];</div>
+<div>} elseif($urlrule == &#39;&#39;) {</div>
+<div>$urlrule = url_par(&#39;page={$page}&#39;);</div>
+<div>}</div>
+<div>$multipage = &#39;&#39;;</div>
+<div>if($num &gt; $perpage) {</div>
+<div>$page = $setpages+1;</div>
+<div>$offset = ceil($setpages/2-1);</div>
+<div>$pages = ceil($num / $perpage);</div>
+<div>if (defined(&#39;IN_ADMIN&#39;) &amp;&amp; !defined(&#39;PAGES&#39;)) define(&#39;PAGES&#39;, $pages);</div>
+<div>$from = $curr_page - $offset;</div>
+<div>$to = $curr_page + $offset;</div>
+<div>$more = 0;</div>
+<div>if($page &gt;= $pages) {</div>
+<div>$from = 2;</div>
+<div>$to = $pages-1;</div>
+<div>} else {</div>
+<div>if($from &lt;= 1) {</div>
+<div>$to = $page-1;</div>
+<div>$from = 2;</div>
+<div>}&nbsp; elseif($to &gt;= $pages) {</div>
+<div>$from = $pages-($page-2);</div>
+<div>$to = $pages-1;</div>
+<div>}</div>
+<div>$more = 1;</div>
+<div>}</div>
+<div>$multipage .= &#39;&lt;a href=&quot;&#39;.pageurl($urlrule, 1, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;首页&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>if($curr_page&gt;0) {</div>
+<div>$multipage .= &#39; &lt;a href=&quot;&#39;.pageurl($urlrule, $curr_page-1, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;previous&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>if($curr_page==1) {</div>
+<div>$multipage .= &#39; &lt;span&gt;1&lt;/span&gt;&#39;;</div>
+<div>} elseif($curr_page&gt;6 &amp;&amp; $more) {</div>
+<div>$multipage .= &#39; &lt;a href=&quot;&#39;.pageurl($urlrule, 1, $array).&#39;&quot; class=&quot;one&quot;&gt;1&lt;/a&gt;..&#39;;</div>
+<div>} else {</div>
+<div>$multipage .= &#39; &lt;a href=&quot;&#39;.pageurl($urlrule, 1, $array).&#39;&quot; class=&quot;one&quot;&gt;1&lt;/a&gt;&#39;;</div>
+<div>}</div>
+<div>}</div>
+<div>for($i = $from; $i &lt;= $to; $i++) {</div>
+<div>if($i != $curr_page) {</div>
+<div>$multipage .= &#39; &lt;a href=&quot;&#39;.pageurl($urlrule, $i, $array).&#39;&quot; class=&quot;one&quot; &gt;&#39;.$i.&#39;&lt;/a&gt;&#39;;</div>
+<div>} else {</div>
+<div>$multipage .= &#39; &lt;span&gt;&#39;.$i.&#39;&lt;/span&gt;&#39;;</div>
+<div>}</div>
+<div>}</div>
+<div>if($curr_page&lt;$pages) {</div>
+<div>if($curr_page&lt;$pages-5 &amp;&amp; $more) {</div>
+<div>$multipage .= &#39; ..&lt;a href=&quot;&#39;.pageurl($urlrule, $pages, $array).&#39;&quot; class=&quot;one&quot;&gt;&#39;.$pages.&#39;&lt;/a&gt; &lt;a href=&quot;&#39;.pageurl($urlrule, $curr_page+1, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;next&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>} else {</div>
+<div>$multipage .= &#39; &lt;a href=&quot;&#39;.pageurl($urlrule, $pages, $array).&#39;&quot; class=&quot;one&quot;&gt;&#39;.$pages.&#39;&lt;/a&gt; &lt;a href=&quot;&#39;.pageurl($urlrule, $curr_page+1, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;next&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>}</div>
+<div>} elseif($curr_page==$pages) {</div>
+<div>$multipage .= &#39; &lt;span&gt;&#39;.$pages.&#39;&lt;/span&gt; &lt;a href=&quot;&#39;.pageurl($urlrule, $curr_page, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;next&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>} else {</div>
+<div>$multipage .= &#39; &lt;a href=&quot;&#39;.pageurl($urlrule, $pages, $array).&#39;&quot; class=&quot;one&quot;&gt;&#39;.$pages.&#39;&lt;/a&gt; &lt;a href=&quot;&#39;.pageurl($urlrule, $curr_page+1, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;next&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>}</div>
+<div>$multipage .= &#39;&lt;a href=&quot;&#39;.pageurl($urlrule, $pages, $array).&#39;&quot; class=&quot;bor&quot;&gt;&#39;.L(&#39;末页&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>$multipage .= &#39;&lt;a class=&quot;solidbor&quot;&gt;&#39;.L(&#39;共&#39;).$pages.L(&#39;页&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>$multipage .= &#39;&lt;a class=&quot;solidbor&quot;&gt;&#39;.$num.L(&#39;page_item&#39;).&#39;&lt;/a&gt;&#39;;</div>
+<div>}</div>
+<div>return $multipage;</div>
+<div>}</div>
+<div>然后修改【phpcms】-》【libs】-》【classes】-》template_cache.class.php</div>
+<div>$str .= &#39;$pages = pages($&#39;.$op.&#39;_total, $page, $pagesize, $urlrule);&#39;;</div>
+<div>在这行的下面加上</div>
+<div>$str .= &#39;$en_pages = en_pages($&#39;.$op.&#39;_total, $page, $pagesize, $urlrule);&#39;;</div>
+<div>$str .= &#39;$r = $get_db-&gt;sql_query(&quot;&#39;.$sql.&#39;&quot;);$s = $get_db-&gt;fetch_next();$pages=pages($s[\&#39;count\&#39;], $page, $pagesize, $urlrule);&#39;;</div>
+<div>在他下面增加：</div>
+<div>$str .= &#39;$r = $get_db-&gt;sql_query(&quot;&#39;.$sql.&#39;&quot;);$s = $get_db-&gt;fetch_next();$en_pages=en_pages($s[\&#39;count\&#39;], $page, $pagesize, $urlrule);&#39;;</div>
+<div>最后在模板中直接用就可以了，如下</div>
+<div>把&nbsp; ：&lt;div id=&quot;pages&quot; class=&quot;text-c&quot;&gt;{$pages}&lt;/div&gt;&nbsp;</div>
+<div>改成：&lt;div id=&quot;pages&quot; class=&quot;text-c&quot;&gt;{$en_pages}&lt;/div&gt;</div>
+<div>&nbsp;</div>
+<div>phpcms 表单向导 后台预览报错</div>
+<div>表单向导添加的表单怎么不能预览和[访问前台]呀更新缓存就可以了</div>
+<div>表单向导添加的表单怎么不能预览和[访问前台]呀</div>
+<div>更新缓存就可以了</div>
+<div>&nbsp;</div>
+<div>phpcms 表单向导HTML案例</div>
+<div>表单向导HTML案例&lt;form method=&quot;post&quot; action=&quot;{APP_PATH}index php?m=formguide&amp;c=index&amp;a=show&amp;formid=12&amp;action=js&amp;siteid=1&quot;&gt;</div>
+<div>表单向导HTML案例</div>
+<div>&lt;form method=&quot;post&quot; action=&quot;{APP_PATH}index.php?m=formguide&amp;c=index&amp;a=show&amp;formid=12&amp;action=js&amp;siteid=1&quot;&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;GuestBook_CateId&quot; id=&quot;GuestBook_CateId&quot; value=&quot;89&quot; /&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;successMessage&quot; id=&quot;successMessage&quot; value=&quot;感谢您的参与！&quot; /&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;successUrl&quot; id=&quot;successUrl&quot; value=&quot;/feedback_89_89.html&quot; /&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;errorMessage&quot; id=&quot;errorMessage&quot; value=&quot;对不起，提交失败，请重试！&quot; /&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;input type=&quot;hidden&quot; name=&quot;errorCodeMessage&quot; id=&quot;errorCodeMessage&quot; value=&quot;对不起，您输入的验证码值不对，请重试！&quot; /&gt;</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;li class=&quot;land_xinxi_li&quot;&gt; &lt;span class=&quot;inp_tit&quot;&gt;联系人:&lt;/span&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &lt;input type=&quot;text&quot; class=&quot;inp&quot; placeholder=&quot;请输入您的姓名&quot; name=&quot;info[name]&quot; id=&quot;GuestBook_UserName&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &lt;div class=&quot;notice&quot;&gt; &lt;span id=&quot;ReqUserName&quot;&gt;*&lt;/span&gt; &lt;/div&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;/li&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;li class=&quot;land_xinxi_li&quot;&gt; &lt;span class=&quot;inp_tit&quot;&gt;电话：&lt;/span&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &lt;input type=&quot;number&quot; class=&quot;inp&quot; placeholder=&quot;请输入您的电话&quot; name=&quot;info[phone]&quot; id=&quot;GuestBook_UserTel&quot; /&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &lt;div class=&quot;notice&quot;&gt; &lt;span id=&quot;ReqUserTel&quot;&gt;*&lt;/span&gt; &lt;/div&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;/li&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;li class=&quot;land_xinxi_li&quot;&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &lt;input type=&quot;submit&quot; name=&quot;dosubmit&quot; class=&quot;btn_tj&quot; id=&quot;dosubmit&quot; value=&quot;提交&quot;/&gt;</div>
+<div>&nbsp; &nbsp; &nbsp; &lt;/li&gt;</div>
+<div>&lt;/form&gt;</div>
+<div>&nbsp;&nbsp;</div>
+<div>phpcms 表单向导--添加验证码</div>
+<div>在phpcms表单向导模块中创建字段时没有验证码类型去选择，所以也就无法直接使用来加入验证码了。对模板程序稍微进行扩展开发即可实现。具体</div>
+<div>在phpcms表单向导模块中创建字段时没有验证码类型去选择，所以也就无法直接使用来加入验证码了。</div>
+<div>对模板程序稍微进行扩展开发即可实现。具体流程如下：</div>
+<div>一、找到表单向导生成模板（一般默认为phpcms/templates/default/formguide/show_js.html）,在大约25行form表单中插入调用验证码的代码，如下：</div>
+<div>&lt;tr&gt;</div>
+<div>&nbsp; &nbsp; &lt;td&gt;&lt;label for=&quot;code&quot;&gt;验证码&lt;/label&gt;&lt;/td&gt;</div>
+<div>&nbsp; &nbsp; &lt;td&gt;</div>
+<div>&nbsp; &nbsp; {php pc_base::load_sys_class(&#39;form&#39;, &#39;&#39;, 0); }</div>
+<div>&nbsp; &nbsp; &lt;input type=&quot;text&quot; id=&quot;code&quot; name=&quot;code&quot; size=&quot;10&quot;&gt;</div>
+<div>&nbsp; &nbsp; {form::checkcode(&#39;code_img&#39;, &#39;4&#39;, &#39;14&#39;, 100, 30)}</div>
+<div>&nbsp; &nbsp; &lt;/td&gt;</div>
+<div>&lt;/tr&gt;</div>
+<div>二、然后找到表单提交地址对应的方法（phpcms/modules/formguide/index.php里的show()方法），在其中加入验证验证码是否正确的程序即可。代码示例如下：</div>
+<div>找到大约第51行，有一句：</div>
+<div>if (isset($_POST[&#39;dosubmit&#39;])) {</div>
+<div>一定要在此句之后的if判断大括号中写：</div>
+<div>//启动session</div>
+<div>$session_storage = &#39;session_&#39;.pc_base::load_config(&#39;system&#39;,&#39;session_storage&#39;);</div>
+<div>pc_base::load_sys_class($session_storage);</div>
+<div>//验证码</div>
+<div>if (($_SESSION[&#39;code&#39;] != strtolower($_POST[&#39;code&#39;])) || empty($_SESSION[&#39;code&#39;])) {</div>
+<div>&nbsp; &nbsp; showmessage(&quot;验证码错误&quot;);</div>
+<div>} else {</div>
+<div>&nbsp; &nbsp; $_SESSION[&#39;code&#39;] = &#39;&#39;;</div>
+<div>}</div>
+<div>&nbsp;&nbsp;</div>
+<div>phpcms 前台判断用户是否登录</div>
+<div>前台登录注册路径：{APP_PATH}}index php?m=member&amp;c=index&amp;a=login判断用户是否登录&lt;?php $userid= param::get_cookie(&amp;</div>
+<div>前台登录注册</div>
+<div>路径：{APP_PATH}}index.php?m=member&amp;c=index&amp;a=login</div>
+<div>判断用户是否登录</div>
+<div>&lt;?php</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; $userid= param::get_cookie(&#39;_userid&#39;);</div>
+<div>?&gt;</div>
+<div>&lt;!--然后再判断是否为空--&gt;</div>
+<div>{if $userid}&nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;。。。这里写已经登录之后的代码。。。</div>
+<div>{else}</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;。。。这里写已经登录之后的代码。。。</div>
+<div>{/if}</div>
+<div>&lt;!--获取用户名--&gt;</div>
+<div>&lt;?php</div>
+<div>$_username = param::get_cookie(&#39;_username&#39;);//当前登录人用户名</div>
+<div>$_userid = param::get_cookie(&#39;_userid&#39;);//当然登录人id</div>
+<div>?&gt;</div>
+<div>{$_userid}</div>
+<div>{$_username}</div>
+<div>&nbsp;&nbsp;</div>
+<div>phpcms 网站上线流程</div>
+<div>v9两个数据库配置地方，一个是D: wamp www caches configs database php另一个是D: wamp www phpsso_server caches configs database php会</div>
+<div>v9两个数据库配置地方，一个是D:\wamp\www\caches\configs\database.php</div>
+<div>另一个是D:\wamp\www\phpsso_server\caches\configs\database.php</div>
+<div>会员注册gong功能</div>
+<div>很多人在网站搬迁的时候只修改了第一个数据库配置地方，把phpsso_server这里面的配置忘记修改了，所以会员没法注册登录，是不是很简单呀，解决搞定。</div>
+<div>&nbsp;&nbsp;</div>
+<div>phpcms 面包屑导航&nbsp;</div>
+<div>当前栏目位置（面包屑导航）：{catpos($catid)}样式修改：phpcms -&gt; libs -&gt; function -&gt; global func php找到函数catpos() 进行修改导航栏样式</div>
+<div>当前栏目位置（面包屑导航）：{catpos($catid)}</div>
+<div>样式修改：phpcms -&gt; libs -&gt; function -&gt; global.func.php</div>
+<div>找到函数catpos() 进行修改导航栏样式</div>
+<div>&nbsp;&nbsp;</div>
+<div>phpcms 中调用某个栏目页面下的子栏目里面的所有文章并分页</div>
+<div>{pc:content action=&quot;lists&quot; catid=&quot;$catid&quot; num=&quot;3&quot; order=&quot;id DESC&quot; page=&quot;$page&quot;} {loop $data $v} &lt;a href=&quot;&quot;&gt;abc&lt;/a&gt; {/loop} {/pc}</div>
+<div>html页面调用： {$pages}</div>
